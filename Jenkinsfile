@@ -2,6 +2,15 @@ pipeline {
     agent none
 
     stages {
+        stage('Docker build') {
+            agent { label 'docker-agent' }
+            steps {
+                sh 'whoami'
+                sh 'id'
+                sh 'ls -l /var/run/docker.sock'
+                sh 'docker ps'
+            }
+        }
         stage('Checkout') {
             agent { label 'spring-agent' }
             steps {
