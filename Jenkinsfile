@@ -1,7 +1,13 @@
 pipeline {
     agent none
 
+    environment {
+        IMAGE = "igoor0/jenkins-demo-app"
+        REGISTRY_CREDENTIALS = "dockerhub"
+    }
+
     stages {
+
         stage('Docker build check ') {
             agent { label 'docker-agent' }
             steps {
@@ -26,12 +32,53 @@ pipeline {
             }
         }
 
-        stage('Docker build') {
-            agent { label 'docker-agent' }
-            steps {
-                unstash 'jar'
-                sh 'docker build -t app:latest .'
-            }
+        stage('Docker Build') {
+                   agent { label 'docker-agent' }
+                   steps {
+                       unstash 'jar'
+                       sh """
+                           docker build -t ${IMAGE}:${BUILD_NUMBER} .
+                           docker tag ${IMAGE}:${BUILD_NUMBER} ${IMAGE}:latest
+                       """
+                   }
+               }
+
+       stage('Docker Login') {
+           agent { label 'docker-agent' }
+           steps {
+               withCredentials([usernamePassword(
+                   credentialsId: "${REGISTRY_CREDENTIALS}",
+                   usernameVariable: 'USER',
+                   passwordVariable: 'PASS'
+               )]) {
+                   sh '''
+                       echo "$PASS" | docker login -u "$USER" --password-stdin
+                   '''
+               }
+           }
+       }
+
+       stage('Docker Push') {
+           agent { label 'docker-agent' }
+           steps {
+               sh """
+                   docker push ${IMAGE}:${BUILD_NUMBER}
+                   docker push ${IMAGE}:latest
+               """
+           }
+       }
+    }
+    post {
+        always {
+            echo 'Pipeline finished'
+        }
+
+        success {
+            echo 'Build + Push SUCCESS'
+        }
+
+        failure {
+            echo 'Pipeline FAILED'
         }
     }
 }
