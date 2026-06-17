@@ -1,8 +1,21 @@
 pipeline {
-    agent any
+    agent { label 'spring-agent' }
 
     stages {
-
+        stage('Who am I') {
+            steps {
+                sh 'hostname'
+                sh 'pwd'
+            }
+        }
+        stage('Debug') {
+            steps {
+                sh 'java -version'
+                sh 'mvn -v || true'
+                sh 'pwd'
+                sh 'ls -la'
+            }
+        }
         stage('Checkout') {
             steps {
                 checkout scm
@@ -18,25 +31,6 @@ pipeline {
         stage('Test') {
             steps {
                 sh './mvnw test'
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker build -t demo-app:latest .'
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                sh '''
-                    docker rm -f demo-app || true
-
-                    docker run -d \
-                      --name demo-app \
-                      -p 8081:8080 \
-                      demo-app:latest
-                '''
             }
         }
     }
