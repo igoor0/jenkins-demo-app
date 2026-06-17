@@ -1,36 +1,27 @@
 pipeline {
-    agent { label 'spring-agent' }
+    agent none
 
     stages {
-        stage('Who am I') {
-            steps {
-                sh 'hostname'
-                sh 'pwd'
-            }
-        }
-        stage('Debug') {
-            steps {
-                sh 'java -version'
-                sh 'mvn -v || true'
-                sh 'pwd'
-                sh 'ls -la'
-            }
-        }
         stage('Checkout') {
+            agent { label 'spring-agent' }
             steps {
                 checkout scm
             }
         }
 
-        stage('Build') {
+        stage('Build & Test (Spring)') {
+            agent { label 'spring-agent' }
             steps {
                 sh './mvnw clean package'
+                stash includes: 'target/*.jar', name: 'jar'
             }
         }
 
-        stage('Test') {
+        stage('Docker build') {
+            agent { label 'docker-agent' }
             steps {
-                sh './mvnw test'
+                unstash 'jar'
+                sh 'docker build -t app:latest .'
             }
         }
     }
