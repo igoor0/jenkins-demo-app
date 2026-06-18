@@ -6,6 +6,6 @@ import org.springframework.stereotype.Service;
 public class DemoService {
 
     public String getMessage() {
-        return "Hello World!";
+        return "Hello World! + commit";
     }
 }
